@@ -18,11 +18,11 @@ package org.kie.workbench.client.perspectives;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
-import com.google.gwt.user.client.Window;
 import org.guvnor.common.services.project.context.ProjectContextChangeEvent;
 import org.guvnor.common.services.project.model.Project;
 import org.guvnor.inbox.client.InboxPresenter;
@@ -57,7 +57,10 @@ import org.uberfire.workbench.model.impl.PanelDefinitionImpl;
 import org.uberfire.workbench.model.impl.PartDefinitionImpl;
 import org.uberfire.workbench.model.impl.PerspectiveDefinitionImpl;
 import org.uberfire.workbench.model.menu.MenuFactory;
+import org.uberfire.workbench.model.menu.MenuItem;
 import org.uberfire.workbench.model.menu.Menus;
+
+import com.google.gwt.user.client.Window;
 
 @ApplicationScoped
 @WorkbenchPerspective(identifier = "projectAwareDroolsAuthoringPerspective")
@@ -105,6 +108,16 @@ public class ProjectAwareDroolsAuthoringPerspective {
 
     @WorkbenchMenu
     public Menus getMenus() {
+    	
+    	List<MenuItem> newResourcesSubmenu = newResourcesMenu.getMenuItems();
+    	
+    	for(MenuItem item: newResourcesSubmenu){
+    		
+    		if(item.getCaption().equalsIgnoreCase("Project")){
+    			newResourcesSubmenu.remove(item);
+    		}
+    	}
+    	
         return MenuFactory
                 .newTopLevelMenu( constants.explore() )
                 .menus()
@@ -138,7 +151,7 @@ public class ProjectAwareDroolsAuthoringPerspective {
                     }
                 } ).endMenu().endMenus().endMenu()
                 .newTopLevelMenu( constants.newItem() )
-                .withItems( newResourcesMenu.getMenuItems() ).endMenu()
+                .withItems( newResourcesSubmenu ).endMenu()
                 .newTopLevelMenu( constants.tools() )
                 .withItems( projectMenu.getMenuItems() ).endMenu()
                 .newTopLevelMenu( AppConstants.INSTANCE.Repository() )
