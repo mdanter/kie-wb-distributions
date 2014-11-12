@@ -118,44 +118,19 @@ public class ProjectAwareDroolsAuthoringPerspective {
     		}
     	}
     	
-        return MenuFactory
-                .newTopLevelMenu( constants.explore() )
-                .menus()
-                .menu( constants.inboxIncomingChanges() )
-                .respondsWith( new Command() {
-                    @Override
-                    public void execute() {
-                        placeManager.goTo( "Inbox" );
-                    }
-                } )
-                .endMenu()
-                .menu( constants.inboxRecentlyEdited() )
-                .respondsWith( new Command() {
-                    @Override
-                    public void execute() {
-                        PlaceRequest p = new DefaultPlaceRequest( "Inbox" );
-                        p.addParameter( "inboxname",
-                                        InboxPresenter.RECENT_EDITED_ID );
-                        placeManager.goTo( p );
-                    }
-                } )
-                .endMenu()
-                .menu( constants.inboxRecentlyOpened() )
-                .respondsWith( new Command() {
-                    @Override
-                    public void execute() {
-                        PlaceRequest p = new DefaultPlaceRequest( "Inbox" );
-                        p.addParameter( "inboxname",
-                                        InboxPresenter.RECENT_VIEWED_ID );
-                        placeManager.goTo( p );
-                    }
-                } ).endMenu().endMenus().endMenu()
-                .newTopLevelMenu( constants.newItem() )
+    	List<MenuItem> projectSubmenu = projectMenu.getMenuItems();
+    	
+    	for(MenuItem item: projectSubmenu){
+    		
+    		if(item.getCaption().contains("Project Editor")){
+    			projectSubmenu.remove(item);
+    		}
+    	}
+    	
+        return MenuFactory.newTopLevelMenu( constants.newItem() )
                 .withItems( newResourcesSubmenu ).endMenu()
                 .newTopLevelMenu( constants.tools() )
-                .withItems( projectMenu.getMenuItems() ).endMenu()
-                .newTopLevelMenu( AppConstants.INSTANCE.Repository() )
-                .withItems( repositoryMenu.getMenuItems() ).endMenu().build();
+                .withItems( projectSubmenu ).endMenu().build();
     }
 
     @OnStartup
