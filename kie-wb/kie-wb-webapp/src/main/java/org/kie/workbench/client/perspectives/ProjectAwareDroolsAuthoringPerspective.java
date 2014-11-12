@@ -15,10 +15,15 @@
  */
 package org.kie.workbench.client.perspectives;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import javax.enterprise.context.ApplicationScoped;
+import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
 import com.google.gwt.user.client.Window;
+import org.guvnor.common.services.project.context.ProjectContextChangeEvent;
 import org.guvnor.common.services.project.model.Project;
 import org.guvnor.inbox.client.InboxPresenter;
 import org.jboss.errai.common.client.api.Caller;
@@ -38,12 +43,14 @@ import org.uberfire.client.annotations.Perspective;
 import org.uberfire.client.annotations.WorkbenchMenu;
 import org.uberfire.client.annotations.WorkbenchPerspective;
 import org.uberfire.client.mvp.PlaceManager;
+import org.uberfire.client.workbench.PanelManager;
 import org.uberfire.lifecycle.OnStartup;
 import org.uberfire.mvp.Command;
 import org.uberfire.mvp.PlaceRequest;
 import org.uberfire.mvp.impl.DefaultPlaceRequest;
 import org.uberfire.workbench.model.PanelDefinition;
 import org.uberfire.workbench.model.PanelType;
+import org.uberfire.workbench.model.PartDefinition;
 import org.uberfire.workbench.model.PerspectiveDefinition;
 import org.uberfire.workbench.model.Position;
 import org.uberfire.workbench.model.impl.PanelDefinitionImpl;
@@ -61,6 +68,9 @@ public class ProjectAwareDroolsAuthoringPerspective {
     private String projectPathString;
 
     @Inject
+    private PlaceManager placeManager;
+
+    @Inject
     private NewResourcePresenter newResourcePresenter;
 
     @Inject
@@ -70,7 +80,7 @@ public class ProjectAwareDroolsAuthoringPerspective {
     private ProjectMenu projectMenu;
 
     @Inject
-    private PlaceManager placeManager;
+    private PanelManager panelManager;
 
     @Inject
     private RepositoryMenu repositoryMenu;
@@ -172,6 +182,33 @@ public class ProjectAwareDroolsAuthoringPerspective {
         perspective.getRoot().insertChild( Position.WEST, west );
 
         return perspective;
+    }
+
+    private final List<PlaceRequest> placesToClose = new ArrayList<PlaceRequest>();
+
+    public void onContextChange( @Observes ProjectContextChangeEvent event ) {
+        placesToClose.clear();
+        process( panelManager.getRoot().getParts() );
+        process( panelManager.getRoot().getChildren() );
+
+        for ( final PlaceRequest placeRequest : placesToClose ) {
+            placeManager.forceClosePlace( placeRequest );
+        }
+    }
+
+    private void process( final List<PanelDefinition> children ) {
+        for ( final PanelDefinition child : children ) {
+            process( child.getParts() );
+            process( child.getChildren() );
+        }
+    }
+
+    private void process( Collection<PartDefinition> parts ) {
+        for ( final PartDefinition partDefinition : parts ) {
+            if ( !partDefinition.getPlace().getIdentifier().equals( "org.kie.guvnor.explorer" ) ) {
+                placesToClose.add( partDefinition.getPlace() );
+            }
+        }
     }
 
 }
