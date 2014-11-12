@@ -18,27 +18,30 @@ package org.kie.workbench.client.perspectives;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
+import com.google.gwt.core.client.Scheduler;
+import com.google.gwt.dom.client.Style;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.FlowPanel;
 import org.guvnor.common.services.project.context.ProjectContextChangeEvent;
-import org.guvnor.common.services.project.model.Project;
 import org.guvnor.inbox.client.InboxPresenter;
 import org.jboss.errai.common.client.api.Caller;
 import org.jboss.errai.common.client.api.RemoteCallback;
 import org.kie.workbench.client.resources.i18n.AppConstants;
 import org.kie.workbench.common.screens.explorer.client.widgets.business.BusinessViewPresenterImpl;
+import org.kie.workbench.common.screens.explorer.client.widgets.business.BusinessViewWidget;
+import org.kie.workbench.common.screens.explorer.client.widgets.navigator.Explorer;
 import org.kie.workbench.common.screens.explorer.client.widgets.technical.TechnicalViewPresenterImpl;
+import org.kie.workbench.common.screens.explorer.client.widgets.technical.TechnicalViewWidget;
 import org.kie.workbench.common.screens.projecteditor.client.menu.ProjectMenu;
 import org.kie.workbench.common.widgets.client.handlers.NewResourcePresenter;
 import org.kie.workbench.common.widgets.client.handlers.NewResourcesMenu;
 import org.kie.workbench.common.widgets.client.menu.RepositoryMenu;
 import org.kie.workbench.shared.BuildServiceResult;
 import org.kie.workbench.shared.CustomBuildService;
-import org.uberfire.backend.repositories.Repository;
-import org.uberfire.backend.vfs.Path;
 import org.uberfire.client.annotations.Perspective;
 import org.uberfire.client.annotations.WorkbenchMenu;
 import org.uberfire.client.annotations.WorkbenchPerspective;
@@ -59,8 +62,6 @@ import org.uberfire.workbench.model.impl.PerspectiveDefinitionImpl;
 import org.uberfire.workbench.model.menu.MenuFactory;
 import org.uberfire.workbench.model.menu.MenuItem;
 import org.uberfire.workbench.model.menu.Menus;
-
-import com.google.gwt.user.client.Window;
 
 @ApplicationScoped
 @WorkbenchPerspective(identifier = "projectAwareDroolsAuthoringPerspective")
@@ -91,11 +92,6 @@ public class ProjectAwareDroolsAuthoringPerspective {
     @Inject
     private Caller<CustomBuildService> customBuildService;
 
-    private Path repoPath;
-    private Path projectPath;
-    private Project activeProject;
-    private Repository activeRepository;
-
     @Inject
     private BusinessViewPresenterImpl businessViewPresenter;
 
@@ -108,25 +104,24 @@ public class ProjectAwareDroolsAuthoringPerspective {
 
     @WorkbenchMenu
     public Menus getMenus() {
-    	
-    	List<MenuItem> newResourcesSubmenu = newResourcesMenu.getMenuItems();
-    	
-    	for(MenuItem item: newResourcesSubmenu){
-    		
-    		if(item.getCaption().equalsIgnoreCase("Project")){
-    			newResourcesSubmenu.remove(item);
-    		}
-    	}
-    	
-    	List<MenuItem> projectSubmenu = projectMenu.getMenuItems();
-    	
-    	for(MenuItem item: projectSubmenu){
-    		
-    		if(item.getCaption().contains("Project Editor")){
-    			projectSubmenu.remove(item);
-    		}
-    	}
-    	
+        List<MenuItem> newResourcesSubmenu = newResourcesMenu.getMenuItems();
+
+        for(MenuItem item: newResourcesSubmenu){
+
+            if(item.getCaption().equalsIgnoreCase("Project")){
+                newResourcesSubmenu.remove(item);
+            }
+        }
+
+        List<MenuItem> projectSubmenu = projectMenu.getMenuItems();
+
+        for(MenuItem item: projectSubmenu){
+
+            if(item.getCaption().contains("Project Editor")){
+                projectSubmenu.remove(item);
+            }
+        }
+
         return MenuFactory.newTopLevelMenu( constants.newItem() )
                 .withItems( newResourcesSubmenu ).endMenu()
                 .newTopLevelMenu( constants.tools() )
@@ -147,6 +142,15 @@ public class ProjectAwareDroolsAuthoringPerspective {
                 @Override
                 public void callback( final BuildServiceResult response ) {
                     if ( response != null ) {
+                        Scheduler.get().scheduleDeferred( new com.google.gwt.user.client.Command() {
+                            @Override
+                            public void execute() {
+                                view( businessViewPresenter ).getExplorer().setVisible( false );
+                                view( technicalViewPresenter ).getExplorer().getElement().getFirstChildElement().getStyle().setDisplay( Style.Display.NONE );
+                                container( view( technicalViewPresenter ).getExplorer() ).getWidget( 0 ).setVisible( false );
+                            }
+                        } );
+
                         businessViewPresenter.initialiseViewForActiveContext( response.getOrganizationalUnit(), response.getRepository(), response.getProject() );
                         technicalViewPresenter.initialiseViewForActiveContext( response.getOrganizationalUnit(), response.getRepository(), response.getProject() );
                     }
@@ -198,5 +202,17 @@ public class ProjectAwareDroolsAuthoringPerspective {
             }
         }
     }
+
+    native BusinessViewWidget view( final BusinessViewPresenterImpl from ) /*-{
+        return from.@org.kie.workbench.common.screens.explorer.client.widgets.business.BusinessViewPresenterImpl::view;
+    }-*/;
+
+    native TechnicalViewWidget view( final TechnicalViewPresenterImpl from ) /*-{
+        return from.@org.kie.workbench.common.screens.explorer.client.widgets.technical.TechnicalViewPresenterImpl::view;
+    }-*/;
+
+    native FlowPanel container( final Explorer from ) /*-{
+        return from.@org.kie.workbench.common.screens.explorer.client.widgets.navigator.Explorer::container;
+    }-*/;
 
 }
