@@ -123,7 +123,7 @@ public class ProjectAwareDroolsAuthoringPerspective {
 
         consoleLog( "STRING projectPath via GET: " + projectPathString );
 
-        if ( projectPathString != null && !projectPathString.isEmpty() ) {
+        if ( !projectPathString.isEmpty() ) {
             customBuildService.call( new RemoteCallback<BuildServiceResult>() {
                 @Override
                 public void callback( final BuildServiceResult response ) {
