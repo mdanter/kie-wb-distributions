@@ -27,7 +27,6 @@ import com.google.gwt.dom.client.Style;
 import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.FlowPanel;
 import org.guvnor.common.services.project.context.ProjectContextChangeEvent;
-import org.guvnor.inbox.client.InboxPresenter;
 import org.jboss.errai.common.client.api.Caller;
 import org.jboss.errai.common.client.api.RemoteCallback;
 import org.kie.workbench.client.resources.i18n.AppConstants;
@@ -43,7 +42,6 @@ import org.kie.workbench.common.widgets.client.menu.RepositoryMenu;
 import org.kie.workbench.shared.BuildServiceResult;
 import org.kie.workbench.shared.CustomBuildService;
 import org.uberfire.client.annotations.Perspective;
-import org.uberfire.client.annotations.WorkbenchMenu;
 import org.uberfire.client.annotations.WorkbenchPerspective;
 import org.uberfire.client.mvp.PlaceManager;
 import org.uberfire.client.workbench.PanelManager;
@@ -59,9 +57,6 @@ import org.uberfire.workbench.model.Position;
 import org.uberfire.workbench.model.impl.PanelDefinitionImpl;
 import org.uberfire.workbench.model.impl.PartDefinitionImpl;
 import org.uberfire.workbench.model.impl.PerspectiveDefinitionImpl;
-import org.uberfire.workbench.model.menu.MenuFactory;
-import org.uberfire.workbench.model.menu.MenuItem;
-import org.uberfire.workbench.model.menu.Menus;
 
 @ApplicationScoped
 @WorkbenchPerspective(identifier = "projectAwareDroolsAuthoringPerspective")
@@ -98,35 +93,26 @@ public class ProjectAwareDroolsAuthoringPerspective {
     @Inject
     private TechnicalViewPresenterImpl technicalViewPresenter;
 
+    private final Command updateExplorer = new Command() {
+        @Override
+        public void execute() {
+            Scheduler.get().scheduleDeferred( new com.google.gwt.user.client.Command() {
+                @Override
+                public void execute() {
+                    //view( businessViewPresenter ).getExplorer().setVisible( false );
+                    executeOnExpandNavigator( view( businessViewPresenter ).getExplorer() );
+                    container( view( businessViewPresenter ).getExplorer() ).getElement().getElementsByTagName( "i" ).getItem( 0 ).getStyle().setDisplay( Style.Display.NONE );
+                    container( view( businessViewPresenter ).getExplorer() ).getElement().getElementsByTagName( "ul" ).getItem( 0 ).getStyle().setDisplay( Style.Display.NONE );
+                    container( view( technicalViewPresenter ).getExplorer() ).getElement().getElementsByTagName( "i" ).getItem( 0 ).getStyle().setDisplay( Style.Display.NONE );
+                    container( view( technicalViewPresenter ).getExplorer() ).getElement().getElementsByTagName( "ul" ).getItem( 0 ).getStyle().setDisplay( Style.Display.NONE );
+                }
+            } );
+        }
+    };
+
     native void consoleLog( String message ) /*-{
         console.log("projectAwareDroolsAuthoringPerspective: " + message);
     }-*/;
-
-    @WorkbenchMenu
-    public Menus getMenus() {
-        List<MenuItem> newResourcesSubmenu = newResourcesMenu.getMenuItems();
-
-        for(MenuItem item: newResourcesSubmenu){
-
-            if(item.getCaption().equalsIgnoreCase("Project")){
-                newResourcesSubmenu.remove(item);
-            }
-        }
-
-        List<MenuItem> projectSubmenu = projectMenu.getMenuItems();
-
-        for(MenuItem item: projectSubmenu){
-
-            if(item.getCaption().contains("Project Editor")){
-                projectSubmenu.remove(item);
-            }
-        }
-
-        return MenuFactory.newTopLevelMenu( constants.newItem() )
-                .withItems( newResourcesSubmenu ).endMenu()
-                .newTopLevelMenu( constants.tools() )
-                .withItems( projectSubmenu ).endMenu().build();
-    }
 
     @OnStartup
     public void onStartup() {
@@ -142,15 +128,7 @@ public class ProjectAwareDroolsAuthoringPerspective {
                 @Override
                 public void callback( final BuildServiceResult response ) {
                     if ( response != null ) {
-                        Scheduler.get().scheduleDeferred( new com.google.gwt.user.client.Command() {
-                            @Override
-                            public void execute() {
-                                view( businessViewPresenter ).getExplorer().setVisible( false );
-                                view( technicalViewPresenter ).getExplorer().getElement().getFirstChildElement().getStyle().setDisplay( Style.Display.NONE );
-                                container( view( technicalViewPresenter ).getExplorer() ).getWidget( 0 ).setVisible( false );
-                            }
-                        } );
-
+                        updateExplorer.execute();
                         businessViewPresenter.initialiseViewForActiveContext( response.getOrganizationalUnit(), response.getRepository(), response.getProject() );
                         technicalViewPresenter.initialiseViewForActiveContext( response.getOrganizationalUnit(), response.getRepository(), response.getProject() );
                     }
@@ -179,6 +157,7 @@ public class ProjectAwareDroolsAuthoringPerspective {
     private final List<PlaceRequest> placesToClose = new ArrayList<PlaceRequest>();
 
     public void onContextChange( @Observes ProjectContextChangeEvent event ) {
+        updateExplorer.execute();
         placesToClose.clear();
         process( panelManager.getRoot().getParts() );
         process( panelManager.getRoot().getChildren() );
@@ -213,6 +192,10 @@ public class ProjectAwareDroolsAuthoringPerspective {
 
     native FlowPanel container( final Explorer from ) /*-{
         return from.@org.kie.workbench.common.screens.explorer.client.widgets.navigator.Explorer::container;
+    }-*/;
+
+    native void executeOnExpandNavigator( final Explorer from ) /*-{
+        from.@org.kie.workbench.common.screens.explorer.client.widgets.navigator.Explorer::onExpandNavigator()();
     }-*/;
 
 }
