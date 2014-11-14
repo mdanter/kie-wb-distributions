@@ -18,14 +18,11 @@ package org.kie.workbench.client.perspectives;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
-import com.google.gwt.core.client.Scheduler;
-import com.google.gwt.dom.client.Style;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.FlowPanel;
 import org.guvnor.common.services.project.context.ProjectContextChangeEvent;
 import org.jboss.errai.common.client.api.Caller;
 import org.jboss.errai.common.client.api.RemoteCallback;
@@ -42,6 +39,7 @@ import org.kie.workbench.common.widgets.client.menu.RepositoryMenu;
 import org.kie.workbench.shared.BuildServiceResult;
 import org.kie.workbench.shared.CustomBuildService;
 import org.uberfire.client.annotations.Perspective;
+import org.uberfire.client.annotations.WorkbenchMenu;
 import org.uberfire.client.annotations.WorkbenchPerspective;
 import org.uberfire.client.mvp.PlaceManager;
 import org.uberfire.client.workbench.PanelManager;
@@ -57,6 +55,14 @@ import org.uberfire.workbench.model.Position;
 import org.uberfire.workbench.model.impl.PanelDefinitionImpl;
 import org.uberfire.workbench.model.impl.PartDefinitionImpl;
 import org.uberfire.workbench.model.impl.PerspectiveDefinitionImpl;
+import org.uberfire.workbench.model.menu.MenuFactory;
+import org.uberfire.workbench.model.menu.MenuItem;
+import org.uberfire.workbench.model.menu.Menus;
+
+import com.google.gwt.core.client.Scheduler;
+import com.google.gwt.dom.client.Style;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.FlowPanel;
 
 @ApplicationScoped
 @WorkbenchPerspective(identifier = "projectAwareDroolsAuthoringPerspective")
@@ -114,6 +120,31 @@ public class ProjectAwareDroolsAuthoringPerspective {
         console.log("projectAwareDroolsAuthoringPerspective: " + message);
     }-*/;
 
+    @WorkbenchMenu
+    public Menus getMenus() {
+        List<MenuItem> newResourcesSubmenu = newResourcesMenu.getMenuItems();
+
+        for(MenuItem item: newResourcesSubmenu){
+
+            if(item.getCaption().equalsIgnoreCase("Project")){
+                newResourcesSubmenu.remove(item);
+            }
+        }
+
+        List<MenuItem> projectSubmenu = projectMenu.getMenuItems();
+
+        for(MenuItem item: projectSubmenu){
+
+            if(item.getCaption().contains("Project Editor")){
+                projectSubmenu.remove(item);
+            }
+        }
+
+        return MenuFactory.newTopLevelMenu( constants.newItem() )
+                .withItems( newResourcesSubmenu ).endMenu()
+                .build();
+    }
+    
     @OnStartup
     public void onStartup() {
         //gets the path param from a GET parameter and creates a Path object from it
