@@ -131,15 +131,6 @@ public class ProjectAwareDroolsAuthoringPerspective {
             }
         }
 
-        List<MenuItem> projectSubmenu = projectMenu.getMenuItems();
-
-        for(MenuItem item: projectSubmenu){
-
-            if(item.getCaption().contains("Project Editor")){
-                projectSubmenu.remove(item);
-            }
-        }
-
         return MenuFactory.newTopLevelMenu( constants.newItem() )
                 .withItems( newResourcesSubmenu ).endMenu()
                 .build();
