@@ -64,6 +64,7 @@
 
   <!-- Specify the paths for translatable code -->
   <source path='client'/>
+  <source path='shared'/>
 
   <extend-property name="locale" values="es"/>
   <extend-property name="locale" values="fr"/>
