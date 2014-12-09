@@ -105,6 +105,7 @@ public class ProjectAwareDroolsAuthoringPerspective {
             Scheduler.get().scheduleDeferred( new com.google.gwt.user.client.Command() {
                 @Override
                 public void execute() {
+                	consoleLog("In execute!");
                     //view( businessViewPresenter ).getExplorer().setVisible( false );
                     executeOnExpandNavigator( view( businessViewPresenter ).getExplorer() );
                     container( view( businessViewPresenter ).getExplorer() ).getElement().getElementsByTagName( "i" ).getItem( 0 ).getStyle().setDisplay( Style.Display.NONE );
@@ -143,20 +144,36 @@ public class ProjectAwareDroolsAuthoringPerspective {
 
 //        projectPathString = "git://master@uf-playground/mortgages/";
 
-        consoleLog( "STRING projectPath via GET: " + projectPathString );
+        consoleLog( "**************** STRING projectPath via GET: " + projectPathString );
 
         if ( !projectPathString.isEmpty() ) {
-            customBuildService.call( new RemoteCallback<BuildServiceResult>() {
+        	consoleLog( ">>>>>>>>>>>>>>> projectPath NOT EMPTY: " + projectPathString );
+            BuildServiceResult bsr = customBuildService.call( new RemoteCallback<BuildServiceResult>() {
                 @Override
                 public void callback( final BuildServiceResult response ) {
                     if ( response != null ) {
+                    	
+                    	consoleLog(response.getOrganizationalUnit().toString());
+                    	consoleLog(response.getProject().toString());
+                    	consoleLog(response.getRepository().toString());
+                    	
+                    	consoleLog("!!!!!!--------> I'm being called 1!");
                         updateExplorer.execute();
+                        consoleLog("!!!!!!--------> I'm being called 2!");
                         businessViewPresenter.initialiseViewForActiveContext( response.getOrganizationalUnit(), response.getRepository(), response.getProject() );
+                        consoleLog("!!!!!!--------> I'm being called 3!");
                         technicalViewPresenter.initialiseViewForActiveContext( response.getOrganizationalUnit(), response.getRepository(), response.getProject() );
+                        consoleLog("!!!!!!--------> I'm being called 4!");
                     }
                 }
             } ).build( projectPathString );
+            
+            consoleLog("Switching to " + bsr.getOrganizationalUnit() + " -- " + bsr.getRepository() + " -- " + bsr.getProject());
+        }else{
+        	consoleLog("==============> PATH WAS EMPTY!");
         }
+        
+        
     }
 
     @Perspective
@@ -179,6 +196,8 @@ public class ProjectAwareDroolsAuthoringPerspective {
     private final List<PlaceRequest> placesToClose = new ArrayList<PlaceRequest>();
 
     public void onContextChange( @Observes ProjectContextChangeEvent event ) {
+    	
+    	consoleLog(event.getOrganizationalUnit().toString()+event.getPackage().toString()+event.getProject().toString()+event.getRepository().toString());
         updateExplorer.execute();
         placesToClose.clear();
         process( panelManager.getRoot().getParts() );
