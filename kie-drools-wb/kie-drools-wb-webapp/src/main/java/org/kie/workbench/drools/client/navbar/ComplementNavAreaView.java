@@ -23,20 +23,20 @@ import javax.inject.Inject;
 import com.github.gwtbootstrap.client.ui.Button;
 import com.github.gwtbootstrap.client.ui.TextBox;
 import com.google.gwt.core.client.GWT;
+import com.google.gwt.core.client.Scheduler;
 import com.google.gwt.event.dom.client.ClickEvent;
 import com.google.gwt.uibinder.client.UiBinder;
 import com.google.gwt.uibinder.client.UiField;
 import com.google.gwt.uibinder.client.UiHandler;
+import com.google.gwt.user.client.Command;
+import com.google.gwt.user.client.Window;
 import com.google.gwt.user.client.ui.Composite;
 import com.google.gwt.user.client.ui.FlowPanel;
-import com.google.gwt.user.client.ui.Image;
 import com.google.gwt.user.client.ui.Panel;
-import com.google.gwt.user.client.ui.RequiresResize;
 import org.kie.workbench.common.widgets.client.search.ClearSearchEvent;
 import org.kie.workbench.common.widgets.client.search.ContextualSearch;
 import org.kie.workbench.common.widgets.client.search.SearchBehavior;
 import org.kie.workbench.common.widgets.client.search.SetSearchTextEvent;
-import org.kie.workbench.drools.client.resources.AppResource;
 import org.uberfire.client.mvp.PlaceManager;
 import org.uberfire.client.workbench.widgets.menu.PespectiveContextMenusPresenter;
 import org.uberfire.mvp.impl.DefaultPlaceRequest;
@@ -46,8 +46,7 @@ import org.uberfire.mvp.impl.DefaultPlaceRequest;
  */
 public class ComplementNavAreaView
         extends Composite
-        implements RequiresResize,
-                   ComplementNavAreaPresenter.View {
+        implements ComplementNavAreaPresenter.View {
 
     interface ViewBinder
             extends
@@ -78,6 +77,17 @@ public class ComplementNavAreaView
     @PostConstruct
     public void init() {
         initWidget( uiBinder.createAndBindUi( this ) );
+
+        Scheduler.get().scheduleDeferred( new Command() {
+            @Override
+            public void execute() {
+                if ( Window.Location.getParameterMap().containsKey( "standalone" ) ) {
+                    searchButton.removeFromParent();
+                    searchTextBox.removeFromParent();
+                }
+            }
+        } );
+
         contextMenuArea.add( contextMenu.getView() );
         contextualSearch.setDefaultSearchBehavior( new SearchBehavior() {
             @Override
@@ -85,13 +95,6 @@ public class ComplementNavAreaView
                 placeManager.goTo( new DefaultPlaceRequest( "FullTextSearchForm" ).addParameter( "term", term ) );
             }
         } );
-    }
-
-    @Override
-    public void onResize() {
-        int height = getParent().getOffsetHeight();
-        int width = getParent().getOffsetWidth();
-//        panel.setPixelSize( width, height );
     }
 
     @UiHandler("searchButton")
