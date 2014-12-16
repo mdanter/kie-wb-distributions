@@ -18,11 +18,14 @@ package org.kie.workbench.drools.client.perspectives;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
 
+import com.google.gwt.core.client.Scheduler;
+import com.google.gwt.dom.client.Style;
+import com.google.gwt.user.client.Window;
+import com.google.gwt.user.client.ui.FlowPanel;
 import org.guvnor.common.services.project.context.ProjectContextChangeEvent;
 import org.jboss.errai.common.client.api.Caller;
 import org.jboss.errai.common.client.api.RemoteCallback;
@@ -43,6 +46,7 @@ import org.uberfire.client.annotations.WorkbenchMenu;
 import org.uberfire.client.annotations.WorkbenchPerspective;
 import org.uberfire.client.mvp.PlaceManager;
 import org.uberfire.client.workbench.PanelManager;
+import org.uberfire.lifecycle.OnOpen;
 import org.uberfire.lifecycle.OnStartup;
 import org.uberfire.mvp.Command;
 import org.uberfire.mvp.PlaceRequest;
@@ -58,11 +62,6 @@ import org.uberfire.workbench.model.impl.PerspectiveDefinitionImpl;
 import org.uberfire.workbench.model.menu.MenuFactory;
 import org.uberfire.workbench.model.menu.MenuItem;
 import org.uberfire.workbench.model.menu.Menus;
-
-import com.google.gwt.core.client.Scheduler;
-import com.google.gwt.dom.client.Style;
-import com.google.gwt.user.client.Window;
-import com.google.gwt.user.client.ui.FlowPanel;
 
 @ApplicationScoped
 @WorkbenchPerspective(identifier = "projectAwareDroolsAuthoringPerspective")
@@ -115,6 +114,7 @@ public class ProjectAwareDroolsAuthoringPerspective {
             } );
         }
     };
+    private boolean hasOpened = false;
 
     native void consoleLog( String message ) /*-{
         console.log("projectAwareDroolsAuthoringPerspective: " + message);
@@ -124,10 +124,10 @@ public class ProjectAwareDroolsAuthoringPerspective {
     public Menus getMenus() {
         List<MenuItem> newResourcesSubmenu = newResourcesMenu.getMenuItems();
 
-        for(MenuItem item: newResourcesSubmenu){
+        for ( MenuItem item : newResourcesSubmenu ) {
 
-            if(item.getCaption().equalsIgnoreCase("Project")){
-                newResourcesSubmenu.remove(item);
+            if ( item.getCaption().equalsIgnoreCase( "Project" ) ) {
+                newResourcesSubmenu.remove( item );
             }
         }
 
@@ -135,9 +135,15 @@ public class ProjectAwareDroolsAuthoringPerspective {
                 .withItems( newResourcesSubmenu ).endMenu()
                 .build();
     }
-    
+
     @OnStartup
     public void onStartup() {
+        updateExplorer.execute();
+    }
+
+    @OnOpen
+    public void onOpen() {
+        hasOpened = true;
         //gets the path param from a GET parameter and creates a Path object from it
         projectPathString = ( ( Window.Location.getParameterMap().containsKey( "path" ) ) ? Window.Location.getParameterMap().get( "path" ).get( 0 ) : "" );
 
@@ -161,7 +167,7 @@ public class ProjectAwareDroolsAuthoringPerspective {
 
     @Perspective
     public PerspectiveDefinition getPerspective() {
-        //When the Perspective definition is requested (i.e. the workbench is switching to *this* perspective) lookup the Project 
+        //When the Perspective definition is requested (i.e. the workbench is switching to *this* perspective) lookup the Project
         final PerspectiveDefinitionImpl perspective = new PerspectiveDefinitionImpl(
                 PanelType.ROOT_LIST );
         perspective.setName( constants.project_authoring() );
@@ -179,6 +185,10 @@ public class ProjectAwareDroolsAuthoringPerspective {
     private final List<PlaceRequest> placesToClose = new ArrayList<PlaceRequest>();
 
     public void onContextChange( @Observes ProjectContextChangeEvent event ) {
+        if ( !hasOpened ) {
+            return;
+        }
+
         updateExplorer.execute();
         placesToClose.clear();
         process( panelManager.getRoot().getParts() );
