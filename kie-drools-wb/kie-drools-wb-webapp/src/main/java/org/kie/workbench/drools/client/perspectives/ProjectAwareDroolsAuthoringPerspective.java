@@ -18,6 +18,7 @@ package org.kie.workbench.drools.client.perspectives;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import javax.enterprise.context.ApplicationScoped;
 import javax.enterprise.event.Observes;
 import javax.inject.Inject;
@@ -29,11 +30,13 @@ import com.google.gwt.user.client.ui.FlowPanel;
 import org.guvnor.common.services.project.context.ProjectContextChangeEvent;
 import org.jboss.errai.common.client.api.Caller;
 import org.jboss.errai.common.client.api.RemoteCallback;
+import org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl;
 import org.kie.workbench.common.screens.explorer.client.widgets.business.BusinessViewPresenterImpl;
 import org.kie.workbench.common.screens.explorer.client.widgets.business.BusinessViewWidget;
 import org.kie.workbench.common.screens.explorer.client.widgets.navigator.Explorer;
 import org.kie.workbench.common.screens.explorer.client.widgets.technical.TechnicalViewPresenterImpl;
 import org.kie.workbench.common.screens.explorer.client.widgets.technical.TechnicalViewWidget;
+import org.kie.workbench.common.screens.explorer.service.Option;
 import org.kie.workbench.common.screens.projecteditor.client.menu.ProjectMenu;
 import org.kie.workbench.common.widgets.client.handlers.NewResourcePresenter;
 import org.kie.workbench.common.widgets.client.handlers.NewResourcesMenu;
@@ -98,6 +101,9 @@ public class ProjectAwareDroolsAuthoringPerspective {
     @Inject
     private TechnicalViewPresenterImpl technicalViewPresenter;
 
+    @Inject
+    private ExplorerPresenterImpl explorerPresenter;
+
     private final Command updateExplorer = new Command() {
         @Override
         public void execute() {
@@ -145,8 +151,8 @@ public class ProjectAwareDroolsAuthoringPerspective {
     public void onOpen() {
         hasOpened = true;
         //gets the path param from a GET parameter and creates a Path object from it
-        projectPathString = ( ( Window.Location.getParameterMap().containsKey( "path" ) ) ? Window.Location.getParameterMap().get( "path" ).get( 0 ) : "" );
 
+        projectPathString = ( ( Window.Location.getParameterMap().containsKey( "path" ) ) ? Window.Location.getParameterMap().get( "path" ).get( 0 ) : "" );
 //        projectPathString = "git://master@uf-playground/mortgages/";
 
         consoleLog( "STRING projectPath via GET: " + projectPathString );
@@ -190,6 +196,32 @@ public class ProjectAwareDroolsAuthoringPerspective {
         }
 
         updateExplorer.execute();
+
+        final String option = ( ( Window.Location.getParameterMap().containsKey( "explorer_mode" ) ) ? Window.Location.getParameterMap().get( "explorer_mode" ).get( 0 ) : "" ).trim();
+
+        final Set<Option> options = getOptions( explorerPresenter );
+        if ( option.equalsIgnoreCase( "business_tree" ) ) {
+            if ( !( options.contains( Option.BUSINESS_CONTENT ) &&
+                    options.contains( Option.TREE_NAVIGATOR ) ) ) {
+                selectBusinessTree( explorerPresenter );
+            }
+        } else if ( option.equalsIgnoreCase( "business_explorer" ) ) {
+            if ( !( options.contains( Option.BUSINESS_CONTENT ) &&
+                    options.contains( Option.BREADCRUMB_NAVIGATOR ) ) ) {
+                selectBusinessExplorer( explorerPresenter );
+            }
+        } else if ( option.equalsIgnoreCase( "tech_tree" ) ) {
+            if ( !( options.contains( Option.TECHNICAL_CONTENT ) &&
+                    options.contains( Option.TREE_NAVIGATOR ) ) ) {
+                selectTechTree( explorerPresenter );
+            }
+        } else if ( option.equalsIgnoreCase( "tech_explorer" ) ) {
+            if ( !( options.contains( Option.TECHNICAL_CONTENT ) &&
+                    options.contains( Option.BREADCRUMB_NAVIGATOR ) ) ) {
+                selectTechExplorer( explorerPresenter );
+            }
+        }
+
         placesToClose.clear();
         process( panelManager.getRoot().getParts() );
         process( panelManager.getRoot().getChildren() );
@@ -228,6 +260,38 @@ public class ProjectAwareDroolsAuthoringPerspective {
 
     native void executeOnExpandNavigator( final Explorer from ) /*-{
         from.@org.kie.workbench.common.screens.explorer.client.widgets.navigator.Explorer::onExpandNavigator()();
+    }-*/;
+
+    native void selectBusinessTree( final ExplorerPresenterImpl presenter ) /*-{
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::selectBusinessView()();
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::activateBusinessView()();
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::showTreeNav()();
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::update()();
+    }-*/;
+
+    native void selectTechTree( final ExplorerPresenterImpl presenter ) /*-{
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::selectTechnicalView()();
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::activateTechView()();
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::showTreeNav()();
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::update()();
+    }-*/;
+
+    native void selectBusinessExplorer( final ExplorerPresenterImpl presenter ) /*-{
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::selectBusinessView()();
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::activateBusinessView()();
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::showBreadcrumbNav()();
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::update()();
+    }-*/;
+
+    native void selectTechExplorer( final ExplorerPresenterImpl presenter ) /*-{
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::selectTechnicalView()();
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::activateTechView()();
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::showBreadcrumbNav()();
+        presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::update()();
+    }-*/;
+
+    native Set<Option> getOptions( final ExplorerPresenterImpl presenter ) /*-{
+        return presenter.@org.kie.workbench.common.screens.explorer.client.ExplorerPresenterImpl::options;
     }-*/;
 
 }
